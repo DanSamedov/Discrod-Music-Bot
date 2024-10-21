@@ -8,6 +8,7 @@ bot_token = os.getenv('BOT_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
@@ -22,6 +23,15 @@ async def oleg_joins():
 @bot.command()
 async def play(ctx, arg):
     await ctx.send(arg)
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        if ctx.voice_client is None:
+            await channel.connect()
+            await ctx.send(f'Joined {channel}')
+        else:
+            await ctx.send('Bot is already connected to a voice channel.')
+    else:
+        await ctx.send('You need to be in a voice channel to use this command.')
 
 @bot.command()
 async def clear(ctx):
@@ -49,7 +59,12 @@ async def skip(ctx):
 
 @bot.command()
 async def stfu(ctx):
-    pass
+    if ctx.voice_client is not None:
+        channel = ctx.voice_client.channel
+        await ctx.voice_client.disconnect()
+        await ctx.send(f'Bot has left the voice channel: {channel}')
+    else:
+        await ctx.send('Bot is not in a voice channel.')
 
 @bot.command()
 async def speed(ctx, arg):
