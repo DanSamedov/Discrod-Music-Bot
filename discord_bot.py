@@ -22,16 +22,22 @@ async def oleg_joins():
 
 @bot.command()
 async def play(ctx, arg):
-    await ctx.send(arg)
     if ctx.author.voice:
         channel = ctx.author.voice.channel
-        if ctx.voice_client is None:
-            await channel.connect()
+        voice = ctx.guild.voice_client
+
+        if voice is None:
+            voice = await channel.connect()
             await ctx.send(f'Joined {channel}')
+            source = discord.FFmpegPCMAudio(executable="ffmpeg", source=r"C:\Users\danas\Desktop\prog\discord_bot\sounds\test.mp3")
+            voice.play(source)
         else:
-            await ctx.send('Bot is already connected to a voice channel.')
+            await ctx.send("Error")
+
     else:
-        await ctx.send('You need to be in a voice channel to use this command.')
+        ctx.send('You need to be in a voice channel to use this command.')
+
+
 
 @bot.command()
 async def clear(ctx):
@@ -60,11 +66,10 @@ async def skip(ctx):
 @bot.command()
 async def stfu(ctx):
     if ctx.voice_client is not None:
-        channel = ctx.voice_client.channel
-        await ctx.voice_client.disconnect()
-        await ctx.send(f'Bot has left the voice channel: {channel}')
+        ctx.voice_client.disconnect()
+        ctx.send(f'Bot has left the voice channel: {ctx.voice_client.channel}')
     else:
-        await ctx.send('Bot is not in a voice channel.')
+        ctx.send('Bot is not in a voice channel.')
 
 @bot.command()
 async def speed(ctx, arg):
