@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 import yt_dlp
 from collections import deque
-
+import asyncio
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
@@ -112,13 +112,17 @@ async def clear(ctx):
 async def play_audio(ctx, arg):
     try:
         await download_with_yt_dlp(arg)
-        await ctx.send("Success! Starting to play the audio.")
     except Exception as e:
         await ctx.send(f"An error occurred: {e}")
 
     if os.path.exists(audio_path):
         source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_path)
-        ctx.guild.voice_client.play(source, after=lambda e: play_next(ctx))
+
+        def after_playing(error):
+            coro = play_next(ctx)
+            asyncio.run_coroutine_threadsafe(coro, bot.loop)
+
+        ctx.guild.voice_client.play(source, after=after_playing)
     else:
         await ctx.send("Error: Audio file not found.")
 
