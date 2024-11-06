@@ -38,9 +38,13 @@ async def play(ctx, arg):
         if voice is None:
             voice = await channel.connect()
             await ctx.send(f"Joined {channel}")
-
-        await play_audio(ctx, arg)
-
+        
+        if voice.is_playing():
+            queue_song(arg)
+            await ctx.send(f"Added to queue: {arg}")
+        else:
+            queue_song(arg)
+            await play_next(ctx)
     else:
         await ctx.send("You need to be in a voice channel to use this command.")
 
@@ -60,6 +64,7 @@ async def pause(ctx):
 @bot.command()
 async def stfu(ctx):
     if ctx.voice_client is not None:
+        songs_queue.clear()
         await ctx.send(f"Bot has left the voice channel: {ctx.voice_client.channel}")
         await ctx.voice_client.disconnect()
     else:
@@ -76,13 +81,21 @@ async def outro(ctx, arg):
     pass
 
 
-@bot.command()
-async def queue(ctx, arg):
+def queue_song(arg):
     global songs_queue
-
     songs_queue.append(arg)
-    if arg == 'stop':
-        await ctx.send(songs_queue.popleft())
+
+
+@bot.command()
+async def print_queue(ctx):
+    queue_list = list(songs_queue)
+    await ctx.send(f"List of songs: {queue_list}")
+
+
+async def play_next(ctx):
+    if songs_queue:
+        next_song = songs_queue.popleft()
+        await play_audio(ctx, next_song)
 
 
 @bot.command()
@@ -105,7 +118,7 @@ async def play_audio(ctx, arg):
 
     if os.path.exists(audio_path):
         source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_path)
-        ctx.guild.voice_client.play(source)
+        ctx.guild.voice_client.play(source, after=lambda e: play_next(ctx))
     else:
         await ctx.send("Error: Audio file not found.")
 
