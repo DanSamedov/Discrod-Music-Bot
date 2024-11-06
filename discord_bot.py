@@ -8,7 +8,6 @@ import asyncio
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
-audio_path = os.getenv('AUDIO_PATH')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -111,39 +110,36 @@ async def clear(ctx):
 @bot.command()
 async def play_audio(ctx, arg):
     try:
-        await download_with_yt_dlp(arg)
+        stream_url = await get_stream_url(arg)
+        if stream_url:
+            source = discord.FFmpegPCMAudio(stream_url)
+            
+            def after_playing(error):
+                coro = play_next(ctx)
+                asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            
+            ctx.guild.voice_client.play(source, after=after_playing)
+            await ctx.send(f"Now playing: {arg}")
+        
+        else:
+            await ctx.send("Could not retrieve audio stream.")
     except Exception as e:
         await ctx.send(f"An error occurred: {e}")
 
-    if os.path.exists(audio_path):
-        source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_path)
 
-        def after_playing(error):
-            coro = play_next(ctx)
-            asyncio.run_coroutine_threadsafe(coro, bot.loop)
-
-        ctx.guild.voice_client.play(source, after=after_playing)
-    else:
-        await ctx.send("Error: Audio file not found.")
-
-
-async def download_with_yt_dlp(url):
-    if os.path.exists(audio_path):
-        os.remove(audio_path)
-    
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'outtmpl': os.path.splitext(audio_path)[0],
-        'noplaylist': True,
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+async def get_stream_url(url):
+    try:
+        if not (url.startswith("http://") or url.startswith("https://")):
+            url = f"ytsearch:{url}"
+        
+        ydl_opts = {'format': 'bestaudio'}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            stream_url = info['url']
+        return stream_url
+    except Exception as e:
+        print(f"Error getting stream URL: {e}")
+        return None
 
 
 bot.run(bot_token)
