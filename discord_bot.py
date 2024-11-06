@@ -3,6 +3,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import yt_dlp
+from collections import deque
+
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
@@ -13,6 +15,8 @@ intents.message_content = True
 intents.voice_states = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
+
+songs_queue = deque()
 
 
 @bot.event
@@ -35,35 +39,10 @@ async def play(ctx, arg):
             voice = await channel.connect()
             await ctx.send(f"Joined {channel}")
 
-        try:
-            await download_with_yt_dlp(arg)
-            await ctx.send("Success! Starting to play the audio.")
-        except Exception as e:
-            await ctx.send(f"An error occurred: {e}")
-
-        if os.path.exists(audio_path):
-            source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_path)
-            voice.play(source)
-        else:
-            await ctx.send("Error: Audio file not found.")
+        await play_audio(ctx, arg)
 
     else:
         await ctx.send("You need to be in a voice channel to use this command.")
-
-
-@bot.command()
-async def clear(ctx):
-    pass
-
-
-@bot.command()
-async def loop(ctx, arg):
-    pass
-
-
-@bot.command()
-async def outro(ctx, arg):
-    pass
 
 
 @bot.command()
@@ -78,17 +57,6 @@ async def pause(ctx):
         await ctx.send("Audio is paused.")
 
 
-
-@bot.command()
-async def queue(ctx, arg):
-    pass
-
-
-@bot.command()
-async def skip(ctx):
-    pass
-
-
 @bot.command()
 async def stfu(ctx):
     if ctx.voice_client is not None:
@@ -99,8 +67,47 @@ async def stfu(ctx):
 
 
 @bot.command()
-async def speed(ctx, arg):
+async def loop(ctx, arg):
     pass
+
+
+@bot.command()
+async def outro(ctx, arg):
+    pass
+
+
+@bot.command()
+async def queue(ctx, arg):
+    global songs_queue
+
+    songs_queue.append(arg)
+    if arg == 'stop':
+        await ctx.send(songs_queue.popleft())
+
+
+@bot.command()
+async def skip(ctx):
+    pass
+
+
+@bot.command()
+async def clear(ctx):
+    pass
+
+
+@bot.command()
+async def play_audio(ctx, arg):
+    try:
+        await download_with_yt_dlp(arg)
+        await ctx.send("Success! Starting to play the audio.")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {e}")
+
+    if os.path.exists(audio_path):
+        source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_path)
+        ctx.guild.voice_client.play(source)
+    else:
+        await ctx.send("Error: Audio file not found.")
 
 
 async def download_with_yt_dlp(url):
