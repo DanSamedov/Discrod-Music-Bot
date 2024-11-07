@@ -16,7 +16,7 @@ intents.voice_states = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 
 songs_queue = deque()
-
+looping = False
 
 @bot.event
 async def on_ready():
@@ -50,18 +50,24 @@ async def play(ctx, arg):
 
 @bot.command()
 async def pause(ctx):
+    global looping
     voice = ctx.guild.voice_client
     
     if voice.is_paused():
+        looping = True
         voice.resume()
         await ctx.send("Audio is resumed.")
     else:
+        looping = False
         voice.pause()
         await ctx.send("Audio is paused.")
 
 
 @bot.command()
 async def stfu(ctx):
+    global looping
+    looping = False
+
     if ctx.voice_client is not None:
         songs_queue.clear()
         await ctx.send(f"Bot has left the voice channel: {ctx.voice_client.channel}")
@@ -72,6 +78,9 @@ async def stfu(ctx):
 
 @bot.command()
 async def loop(ctx, arg):
+    global looping
+    looping = True
+
     if ctx.author.voice:
         channel = ctx.author.voice.channel
         voice = ctx.guild.voice_client
@@ -81,11 +90,15 @@ async def loop(ctx, arg):
             await ctx.send(f"Joined {channel}")
         
         if voice.is_playing():
-            queue_song(arg)
-            await ctx.send(f"Added to queue: {arg}")
+            await ctx.send("Wait till the end of the audio")
         else:
-            queue_song(arg)
-            await play_next(ctx)
+            while looping:
+                queue_song(arg)
+                await play_next(ctx)
+
+                await asyncio.sleep(1)
+                while voice.is_playing():
+                    await asyncio.sleep(1)
     else:
         await ctx.send("You need to be in a voice channel to use this command.")
 
@@ -114,15 +127,20 @@ async def play_next(ctx):
 
 @bot.command()
 async def skip(ctx):
+    global looping
+    looping = False
+
     ctx.guild.voice_client.stop()
-    ctx.send("Done! Playing next song")
+    await ctx.send("Done! Playing next song")
     play_next(ctx)
 
 
 @bot.command()
 async def clear(ctx):
-    ctx.guild.voice_client.stop()
-    ctx.send("Queue is cleared")
+    global songs_queue
+
+    songs_queue = deque()
+    await ctx.send("Queue is cleared")
 
 
 @bot.command()
