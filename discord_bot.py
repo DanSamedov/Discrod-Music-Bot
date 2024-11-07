@@ -72,7 +72,22 @@ async def stfu(ctx):
 
 @bot.command()
 async def loop(ctx, arg):
-    pass
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        voice = ctx.guild.voice_client
+
+        if voice is None:
+            voice = await channel.connect()
+            await ctx.send(f"Joined {channel}")
+        
+        if voice.is_playing():
+            queue_song(arg)
+            await ctx.send(f"Added to queue: {arg}")
+        else:
+            queue_song(arg)
+            await play_next(ctx)
+    else:
+        await ctx.send("You need to be in a voice channel to use this command.")
 
 
 @bot.command()
@@ -99,12 +114,15 @@ async def play_next(ctx):
 
 @bot.command()
 async def skip(ctx):
-    pass
+    ctx.guild.voice_client.stop()
+    ctx.send("Done! Playing next song")
+    play_next(ctx)
 
 
 @bot.command()
 async def clear(ctx):
-    pass
+    ctx.guild.voice_client.stop()
+    ctx.send("Queue is cleared")
 
 
 @bot.command()
