@@ -25,8 +25,16 @@ async def on_ready():
 
 
 @bot.event
-async def oleg_joins():
-    pass
+async def oleg_joins(member, before, after):
+    # Replace with the user ID of the specific user you want to track
+    specific_user_id = 427394218827317249  # Example: 123456789012345678
+
+    # Check if the user is the one you're tracking and joined a voice channel
+    if member.id == specific_user_id and after.channel is not None and before.channel != after.channel:
+        # Action when the specific user joins a voice channel
+        channel = after.channel
+        await channel.connect()
+        await member.guild.system_channel.send(f"{member.display_name} has joined {channel.name}!")
 
 
 @bot.command()
@@ -152,7 +160,7 @@ async def play_audio(ctx, arg):
         voice = ctx.guild.voice_client
 
         if stream_url:
-            source = discord.FFmpegPCMAudio(stream_url)
+            source = discord.FFmpegPCMAudio(stream_url, options="-vn -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5")
             
             def after_playing(error):
                 if error:
@@ -192,7 +200,7 @@ async def get_stream_url(url):
                 info = info['entries'][0]
 
             song_title = info.get('title')
-            stream_url = info.get('url')
+            stream_url = info['url']
 
         return stream_url, song_title
         
