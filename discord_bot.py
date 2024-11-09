@@ -8,7 +8,7 @@ import asyncio
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
-my_user_id = os.getenv('MY_USER_ID')
+my_user_id = int(os.getenv('MY_USER_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -31,8 +31,19 @@ async def on_voice_state_update(member, before, after):
 
     if member.id == specific_user_id and after.channel is not None and before.channel != after.channel:
         channel = after.channel
-        await channel.connect()
-        await member.guild.system_channel.send(f"{member.display_name} has joined {channel.name}!")
+
+        if not member.guild.voice_client or member.guild.voice_client.channel != channel:
+            await channel.connect()
+
+        stream_url, song_title = await get_stream_url('https://www.youtube.com/watch?v=OQG39PLNAHc&ab_channel=flarpi')
+        
+        if stream_url:
+            voice = member.guild.voice_client
+            source = discord.FFmpegPCMAudio(stream_url, options="-vn")
+            
+            if voice.is_playing():
+                voice.stop()
+            voice.play(source)
 
 
 @bot.command()
