@@ -8,6 +8,7 @@ import asyncio
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
+my_user_id = os.getenv('MY_USER_ID')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -25,13 +26,10 @@ async def on_ready():
 
 
 @bot.event
-async def oleg_joins(member, before, after):
-    # Replace with the user ID of the specific user you want to track
-    specific_user_id = 427394218827317249  # Example: 123456789012345678
+async def on_voice_state_update(member, before, after):
+    specific_user_id = my_user_id
 
-    # Check if the user is the one you're tracking and joined a voice channel
     if member.id == specific_user_id and after.channel is not None and before.channel != after.channel:
-        # Action when the specific user joins a voice channel
         channel = after.channel
         await channel.connect()
         await member.guild.system_channel.send(f"{member.display_name} has joined {channel.name}!")
