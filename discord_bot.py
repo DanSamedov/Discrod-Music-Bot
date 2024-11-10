@@ -123,8 +123,17 @@ async def loop(ctx, *, arg):
 
 
 @bot.command()
-async def outro(ctx, arg):
-    pass
+async def outro(ctx):
+    if ctx.author.voice:
+        voice_channel = ctx.author.voice.channel
+
+        members = voice_channel.members
+
+        for member in members:
+            await member.move_to(None)
+
+    else:
+        await ctx.send(f"You need to be in a voice channel to use this command.")
 
 
 def queue_song(arg):
