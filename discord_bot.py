@@ -124,11 +124,26 @@ async def loop(ctx, *, arg):
 
 @bot.command()
 async def outro(ctx):
+
+    url = 'https://www.youtube.com/watch?v=3_-a9nVZYjk&ab_channel=TrapNation'
+    stream_url, song_title = await get_stream_url(url)
+
     if ctx.author.voice:
         voice_channel = ctx.author.voice.channel
-
+        voice = ctx.guild.voice_client
         members = voice_channel.members
 
+        if voice is None:
+            voice = await voice_channel.connect()
+
+        source = discord.FFmpegPCMAudio(stream_url, options="-t 56 -vn -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5")
+
+        if voice.is_playing():
+            voice.stop()
+
+        voice.play(source)
+        await asyncio.sleep(56)
+        
         for member in members:
             await member.move_to(None)
 
