@@ -143,9 +143,11 @@ async def outro(ctx):
 
         voice.play(source)
         await asyncio.sleep(56)
-        
+
         for member in members:
             await member.move_to(None)
+            
+        await ctx.voice_client.disconnect()
 
     else:
         await ctx.send(f"You need to be in a voice channel to use this command.")
