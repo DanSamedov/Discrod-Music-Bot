@@ -14,7 +14,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
 
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 songs_queue = deque()
 looping = False
@@ -146,7 +146,7 @@ async def outro(ctx):
 
         for member in members:
             await member.move_to(None)
-            
+
         await ctx.voice_client.disconnect()
 
     else:
