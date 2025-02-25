@@ -35,7 +35,7 @@ async def on_voice_state_update(member, before, after):
         if not member.guild.voice_client or member.guild.voice_client.channel != channel:
             await channel.connect()
 
-        stream_url, song_title = await get_stream_url('https://www.youtube.com/watch?v=2V7Lt-7wzgU&ab_channel=CCMusic')
+        stream_url, song_title = await get_stream_url('https://www.youtube.com/watch?v=NcPmSohIl9k&ab_channel=Apothegm')
         
         if stream_url:
             voice = member.guild.voice_client
