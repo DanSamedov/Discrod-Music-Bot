@@ -135,7 +135,7 @@ async def queue(ctx):
     """Displays the song queue."""
     if songs_queue:
         queue_list = [title for _, title in songs_queue]
-        await ctx.send(f"Queue: {', '.join(queue_list)}")
+        await ctx.send(f"Queue: `{', '.join(queue_list)}`")
     else:
         await ctx.send("Queue is empty.")
 
@@ -156,19 +156,6 @@ async def leave(ctx):
         await ctx.send("Bot has left the voice channel.")
     else:
         await ctx.send("Bot is not in a voice channel.")
-
-
-async def play_next(ctx):
-    """Plays the next song in the queue or loops the current one."""
-    global looping_song
-    voice = ctx.guild.voice_client
-    if looping_song:
-        await play_audio(ctx, looping_song)
-    elif songs_queue:
-        stream_url, song_title = songs_queue.popleft()
-        await play_audio(ctx, stream_url, song_title)
-    else:
-        await ctx.send("Queue is empty.")
 
 
 @bot.command()
@@ -222,14 +209,33 @@ async def play_audio(ctx, url, title=None):
         def after_playing(error):
             if error:
                 logger.error(f"Error playing audio: {error}")
-            coro = play_next(ctx)
-            asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            
+            if songs_queue:
+                coro = play_next(ctx)
+                asyncio.run_coroutine_threadsafe(coro, bot.loop)
+            else:
+                logger.info("Queue is empty, no more songs to play.")
+
 
         voice.play(source, after=after_playing)
         await ctx.send(f"Now playing: `{song_title}`")
     except Exception as e:
         logger.error(f"Error in play_audio: {e}")
         await ctx.send(f"An error occurred: `{e}`")
+
+
+async def play_next(ctx):
+    global looping_song
+    voice = ctx.guild.voice_client
+
+    if looping_song:
+        await play_audio(ctx, looping_song)
+    elif songs_queue:
+        stream_url, song_title = songs_queue.popleft()
+        await play_audio(ctx, stream_url, song_title)
+    else:
+        await asyncio.sleep(2)  # Ensure the song fully stops before clearing
+        logger.info("Playback finished. Queue is empty.")
 
 
 async def get_stream_url(url):
