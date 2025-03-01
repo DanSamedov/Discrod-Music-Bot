@@ -1,6 +1,6 @@
 # 🎵 Discord Music Bot
 
-A powerful and feature-rich Discord bot that plays music from YouTube, supports queuing, looping, and even an automated outro sequence. Built using **Python** and **discord.py**, this bot is designed to provide a seamless music experience for Discord servers.
+A Discord bot that plays music from YouTube, supports queuing, looping, and even an automated outro sequence. Built using **Python** and **discord.py**, this bot is designed to provide a seamless music experience for Discord servers.
 
 ---
 
